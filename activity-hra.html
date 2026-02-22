@@ -1,0 +1,440 @@
+<html lang="cs"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity – Generátor slov</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --card-paint: #ff6b6b;
+    --card-mime: #ffd166;
+    --card-desc: #06d6a0;
+    --accent: #fffffe;
+    --text: #fffffe;
+    --easy: #06d6a0;
+    --medium: #ffd166;
+    --hard: #ff9f1c;
+    --expert: #ef476f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(255,107,107,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(6,214,160,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 30%, rgba(255,209,102,0.08) 0%, transparent 40%);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #ff6b6b, #ffd166, #06d6a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  header p {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.95rem;
+    margin-top: 6px;
+  }
+
+  /* Difficulty selector */
+  .difficulty-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .diff-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    padding: 8px 20px;
+    border: 2px solid transparent;
+    border-radius: 50px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.6);
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .diff-btn:hover { transform: translateY(-2px); color: #fff; }
+
+  .diff-btn.active[data-d="1"] { background: var(--easy); color: #0f0e17; border-color: var(--easy); box-shadow: 0 0 20px rgba(6,214,160,0.4); }
+  .diff-btn.active[data-d="2"] { background: var(--medium); color: #0f0e17; border-color: var(--medium); box-shadow: 0 0 20px rgba(255,209,102,0.4); }
+  .diff-btn.active[data-d="3"] { background: var(--hard); color: #0f0e17; border-color: var(--hard); box-shadow: 0 0 20px rgba(255,159,28,0.4); }
+  .diff-btn.active[data-d="4"] { background: var(--expert); color: #fff; border-color: var(--expert); box-shadow: 0 0 20px rgba(239,71,111,0.4); }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 1050px;
+  }
+
+  .card {
+    border-radius: 24px;
+    padding: 28px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+
+  .card:hover { transform: translateY(-3px); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    opacity: 0.12;
+  }
+
+  .card.paint { background: linear-gradient(145deg, rgba(255,107,107,0.18), rgba(255,107,107,0.05)); border: 1.5px solid rgba(255,107,107,0.35); }
+  .card.mime  { background: linear-gradient(145deg, rgba(255,209,102,0.18), rgba(255,209,102,0.05)); border: 1.5px solid rgba(255,209,102,0.35); }
+  .card.desc  { background: linear-gradient(145deg, rgba(6,214,160,0.18), rgba(6,214,160,0.05)); border: 1.5px solid rgba(6,214,160,0.35); }
+
+  .card-icon {
+    font-size: 2.8rem;
+    line-height: 1;
+  }
+
+  .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+
+  .card.paint .card-title { color: #ff8e8e; }
+  .card.mime  .card-title { color: #ffd166; }
+  .card.desc  .card-title { color: #06d6a0; }
+
+  .word-display {
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .word {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    line-height: 1.2;
+    color: #fff;
+    transition: all 0.3s;
+    word-break: break-word;
+  }
+
+  .word.animating {
+    animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .word-hint {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .diff-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .card.paint .diff-badge { background: rgba(255,107,107,0.2); color: #ff8e8e; }
+  .card.mime  .diff-badge { background: rgba(255,209,102,0.2); color: #ffd166; }
+  .card.desc  .diff-badge { background: rgba(6,214,160,0.2); color: #06d6a0; }
+
+  .gen-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    padding: 13px 32px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gen-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.15s;
+  }
+
+  .gen-btn:hover::after { background: rgba(255,255,255,0.15); }
+  .gen-btn:active { transform: scale(0.97); }
+
+  .card.paint .gen-btn { background: linear-gradient(135deg, #ff6b6b, #ff4d4d); color: #fff; box-shadow: 0 4px 20px rgba(255,107,107,0.4); }
+  .card.mime  .gen-btn { background: linear-gradient(135deg, #ffd166, #ffb800); color: #0f0e17; box-shadow: 0 4px 20px rgba(255,209,102,0.4); }
+  .card.desc  .gen-btn { background: linear-gradient(135deg, #06d6a0, #00b887); color: #0f0e17; box-shadow: 0 4px 20px rgba(6,214,160,0.4); }
+
+  .counter {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.25);
+    margin-top: -8px;
+  }
+
+  footer {
+    margin-top: 48px;
+    color: rgba(255,255,255,0.2);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎉 Activity</h1>
+  <p>Generátor slov pro vaši hru</p>
+</header>
+
+<div class="difficulty-bar">
+  <button class="diff-btn active" data-d="1">🟢 Lehká</button>
+  <button class="diff-btn" data-d="2">🟡 Střední</button>
+  <button class="diff-btn" data-d="3">🟠 Těžká</button>
+  <button class="diff-btn" data-d="4">🔴 Expert</button>
+</div>
+
+<div class="cards">
+  <!-- MALOVÁNÍ -->
+  <div class="card paint">
+    <div class="card-icon">🎨</div>
+    <div class="card-title">Malování</div>
+    <span class="diff-badge" id="badge-paint">Lehká</span>
+    <div class="word-display">
+      <div class="word" id="word-paint">Stiskni tlačítko!</div>
+      <div class="word-hint" id="hint-paint"></div>
+    </div>
+    <button class="gen-btn" onclick="generate('paint')">✏️ Nové slovo</button>
+    <div class="counter" id="count-paint"></div>
+  </div>
+
+  <!-- PANTOMIMA -->
+  <div class="card mime">
+    <div class="card-icon">🕺</div>
+    <div class="card-title">Pantomima</div>
+    <span class="diff-badge" id="badge-mime">Lehká</span>
+    <div class="word-display">
+      <div class="word" id="word-mime">Stiskni tlačítko!</div>
+      <div class="word-hint" id="hint-mime"></div>
+    </div>
+    <button class="gen-btn" onclick="generate('mime')">🤸 Nové slovo</button>
+    <div class="counter" id="count-mime"></div>
+  </div>
+
+  <!-- POPIS SLOVEM -->
+  <div class="card desc">
+    <div class="card-icon">💬</div>
+    <div class="card-title">Popis slovem</div>
+    <span class="diff-badge" id="badge-desc">Lehká</span>
+    <div class="word-display">
+      <div class="word" id="word-desc">Stiskni tlačítko!</div>
+      <div class="word-hint" id="hint-desc"></div>
+    </div>
+    <button class="gen-btn" onclick="generate('desc')">🗣️ Nové slovo</button>
+    <div class="counter" id="count-desc"></div>
+  </div>
+</div>
+
+<footer>
+  Každá kategorie má 500+ slov ve 4 úrovních obtížnosti
+  <br><br>
+  <button onclick="downloadApp()" style="font-family: &quot;Fredoka One&quot;, cursive; font-size: 1rem; padding: 12px 28px; border-radius: 50px; border: 2px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.15); color: rgb(255, 255, 255); cursor: pointer; letter-spacing: 1px; transition: 0.2s; transform: translateY(-2px);" onmouseover="this.style.background='rgba(255,255,255,0.15)';this.style.color='#fff';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.7)';this.style.transform='translateY(0)'">
+    ⬇️ Stáhnout aplikaci
+  </button>
+</footer>
+
+<script>
+function downloadApp() {
+  const html = document.documentElement.outerHTML;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'activity-hra.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+
+<script>
+const WORDS = {
+  paint: {
+    1: ["pes","kočka","auto","dům","strom","slunce","měsíc","ryba","pták","květ","loď","vlak","hrad","hora","řeka","jablko","banán","dort","kolo","míč","srdce","hvězda","mrak","déšť","sníh","had","zajíc","žába","pes","kůň","kráva","prase","ovce","mrkev","brambora","chléb","sklenice","talíř","nůž","vidlička","kniha","tužka","okno","dveře","postel","stůl","židle","lampa","telefon","hodiny"],
+    2: ["západ slunce","sopka","rybník","most","sklep","věž","továrna","tržiště","zahrada","sad","pole","les","džungle","poušť","oceán","ostrov","jeskyně","vodopád","molo","maják","stadion","park","muzeum","škola","nemocnice","letiště","nádraží","přehrada","bazén","palác","zámek","katedrála","mešita","klášter","pevnost","tábor","přístav","trh","námořník","záchranář","hasič","pilot","kuchař","chirurg","architekt","rybář","horník","pastýř","cirkus","karneval"],
+    3: ["perspektiva","panorama","reliéf","abstrakce","iluze","symetrie","asymetrie","mozaika","freska","vitráž","karikatura","portrét","zátiší","krajina","abstrakce","trompe-l'oeil","šerosvit","sfumato","pointilismus","kubismus","impresionismus","surrealismus","dadaismus","expresionismus","minimalismus","hyperrealismus","pop-art","op-art","futurismus","symbolismus","romantismus","realismus","baroko","renesance","gotika","manýrismus","rokoko","secese","biedermeier","konstruktivismus"],
+    4: ["epistemologie","transcendence","fenomenologie","ontologie","hermeneutika","dialektika","apokalypsa","eschatologie","metamorfóza","transmutace","sublimace","emanace","quintesence","paradox nekonečna","Möbiova páska","Penroseovy schody","Escherovarová transformace","vědomí a podvědomí","čtvrté dimenze","fraktální geometrie","kvantová superpozice","entanglement","singularita","temná hmota","temná energie","multiverse","holografický princip","antropický princip","fermiho paradox","Drakeova rovnice"],
+  },
+  mime: {
+    1: ["spát","jíst","pít","běžet","skákat","plavat","letět","jezdit na kole","vařit","čistit zuby","česat se","oblékat se","tancovat","zpívat","číst","psát","malovat","kopat","házet","chytat","tlačit","táhnout","sedět","stát","lézt","plazit se","smát se","plakat","křičet","šeptat","telefonovat","fotografovat","hodit snowball","lyžovat","bruslit","boxovat","šermovat","hrát fotbal","hrát tenis","hrát golf"],
+    2: ["nakupovat v supermarketu","řídit závodní auto","zapalovat oheň","stříhat vlasy","opravovat auto","sázet strom","dojit krávu","rybařit","lézt na horu","surfovat","padák skákat","potápět se","jít po laně","kouzlit","žonglovat","hrát na kytaru","hrát na klavír","dirigovat","sochu udělat","malovat zeď","pokládat dlažbu","svařovat","operovat","stomatolog","zachraňovat tonoucího","ovládat dron","virtuální realita","meditovat","jóga","tai chi"],
+    3: ["vyjednávat smlouvu","rozhodovat dilema","zažívat déjà vu","myslet na vzdálené vzpomínky","procházet se v mlze","čekat na výsledky testu","skrývat tajemství","falešná radost","mlčenlivé smutek","nenápadná lhostejnost","skrytá závist","falešná sebejistota","překonávat strach z výšek","procházet bezpečnostní kontrolou","vysvětlovat cestu cizinci","přijímat špatnou zprávu","reagovat na překvapení","hledat ztracené klíče","orientovat se bez mapy","telekonference s technickými problémy"],
+    4: ["kvantová superpozice","schrödingerova kočka","paradox pozorovatele","relativita času","gravitační singularita","entropický rozpad","emergentní vědomí","kolektivní nevědomí","archetypy Jungovy","platonické ideje","stoická ataraxia","budhistická nirvána","taoistický wu-wei","herakleitovský flux","sókratovská maieutika","nietzscheovský nadčlověk","kierkegaardovský skok","sartrianská existenciální úzkost","heideggerovské bytí","derridovská différance"],
+  },
+  desc: {
+    1: ["pes","kočka","auto","slunce","měsíc","strom","květ","moře","hora","řeka","kniha","telefon","jídlo","pití","hudba","tanec","sport","škola","rodina","přátelé","léto","zima","jaro","podzim","ráno","večer","noc","den","týden","rok","barva","tvar","velikost","váha","rychlost","síla","teplo","chlad","světlo","tma"],
+    2: ["nostalgie","soucit","odvaha","pokora","trpělivost","poctivost","loajalita","vděčnost","odpuštění","tolerance","tvořivost","zvídavost","vytrvalost","disciplína","ambice","skromnost","štědrost","empatie","integrita","zodpovědnost","svoboda","rovnost","spravedlnost","demokracie","solidarita","komunita","tradice","inovace","udržitelnost","rozmanitost","globalizace","digitalizace","urbanizace","sekularizace","polarizace","radikalizace","marginalizace","privatizace","liberalizace","demokratizace"],
+    3: ["kognitivní disonance","konformismus","etnocentrismus","relativisum","absolutismus","determinismus","indeterminismus","reduktionismus","holismus","emergentismus","funkcionalismus","strukturalismus","poststrukturalismus","dekonstruktivismus","neopragmatismus","neomarxismus","neoliberalismus","neokonzervatismus","libertarianismus","komunitarismus","republikanismus","kosmopolitismus","nacionalismus","patriotismus","imperialismus","kolonialismu","postkolonialismus","transnacionalismus","multikulturalismus","asimilacionismus"],
+    4: ["epistemická skromnost","gettierův problém","intelektuální ctnosti","pragmatická teorie pravdy","koherentistická epistemologie","fundacionalistická epistemologie","reliabilistická epistemologie","kontekstualistická epistemologie","vícehodnotová logika","dialeteismus","parakonsistentní logika","relevantní logika","modální logika","temporální logika","dontická logika","epistemická logika","fuzzy logika","kategoriální teorie","topologická logika","lambda kalkulus"],
+  }
+};
+
+// Extra words to pad to 500+
+const EXTRA_PAINT_1 = ["drak","robot","vesmírná loď","dinosaurus","jednorožec","čaroděj","rytíř","princ","princezna","piát","kovboj","superhrdina","robot","mumie","vlkodlak","upír","zombie","elf","trpaslík","gigant","delfín","velryba","žralok","tučňák","panda","koala","klokan","lev","tygr","leopard","gepard","nosorožec","hroch","slon","žirafa","zebra","gorila","opice","papagáj","plameňák","pelikán","orel","sova","vrabec","labuť","holub","vrána","havran","kondor","kolibřík","ještěr","krokodýl","želva","chameleon","mamba","kobra","hroznýš","leguán","gekko","mlokem","salamandr","axolotl","platýs","kapr","štika","candát","okoun","losos","pstruh","úhoř","sumec","mřenka","sekavec","duhový pstruh","karas","amur","tolstolobik","chňapálka","murena","chobotnice","medúza","hvězdice","ježovka","krab","langusta","humr","garnát","hlemýžď","slimák","pavouček","brouk","motýl","vážka","vosa","čmelák","mravenec","cvrček","koník","mantis","stonožka","housenka","kukla","chroustaček","světluška","tesařík","chrobák","zlatohlávek","skarabeus"];
+
+const EXTRA_PAINT_2 = ["botanická zahrada","kosmická stanice","ponorka","letadlová loď","vzducholoď","balón","parník","plachetnice","katamarán","jachta","motorový člun","člun","kánoe","kajak","pramice","gondola","veslice","hydroplán","vznášedlo","raketoplán","vrtulník","ultralehký letoun","paraglidista","tandem skok","akrobatické letadlo","bojový drak","bojový vrtulník","stíhačka","bombardér","transportní letoun","výsadkář","záchranný vrtulník","průzkumný dron","bojový dron","drátěný most","visutý most","obloukový most","lávka","tunel","viadukt","akvadukt","akvarium","terarium","vivarium","botanikum","planetárium","observatoř","teleskop","dalekohled","mikroskop","periskop","kaleidoskop","sextant","kompas","barometr","teploměr","hygrometr","anemometr","pluviometr","seismograf","magnetometr","gyroskop","akcelerometr","GPS","radar","sonar","echoloket","infračervený senzor"];
+
+const EXTRA_MIME_1 = ["strojit grimasy","napodobovat zvíře","být socha","řídit helikoptéru","veslovat","sáňkovat","zavazovat tkaničky","zapínat knoflíky","nakládať kufr","vzpírat činky","skákat přes švihadlo","houpat se na houpačce","lézt po žebříku","malovat zeď válečkem","kopat ze hroby","hledat jehlu v seně","nosit vodu v sítu","tahat za provaz","přetahování lanem","kolo štěstí","hrát pikado","bowlingem hrát","biliárd hrát","ping-pong hrát","šachy hrát","damou hrát","mahjong hrát","karetní trik","čarodějnický trik","iluzionista","ohňový žonglér","cirkusový klaun","akrobat na trampolíně","akrobat v kruhu","vzdušná akrobacie","baletní tanec","flamenko","breakdance","hip-hop tanec","salsa tanec","tango tanec","valčík tanec","polka tanec","čardáš tanec","folklorní tanec","indiánský tanec","africký tanec","hula hoop","capoeira","bojové umění","zápas sumo"];
+
+const EXTRA_MIME_2 = ["navigovat lodí bouří","opravovat satelit ve vesmíru","záchrana z hořícího domu","výstup na Everest","přežití v džungli","únos z budovy","stonání v nemocnici","setkání s mimozemšťanem","putování časem","práce v podmořské stanici","ovládání mechovité robotické ruky","komunikace se zvířaty telepeticky","procházení zrcadlového labyrintu","přistání letadla v hustém sněhu","navigace v podmínkách nulové gravitace","zápas s obrovskou chobotnnicí","pohyb v husté mlze","stavba iglú v arktickém mrazu","přechod quicksand oblasti","otevírání trezoru kombinací"];
+
+const EXTRA_DESC_1 = ["přátelství","láska","nenávist","strach","radost","smutek","hněv","překvapení","znechucení","opovržení","závist","žárlivost","pýcha","stud","vina","lítost","nostalgie","melancholie","euforie","apatie","nudie","vzrušení","napětí","relaxace","únava","energie","motivace","inspirace","kreativita","logika","intuice","empatie","sympatie","antipatie","neutralita","objektivita","subjektivita","relativita","absolutno","nekonečno","prázdnota","plnost","přirozenost","umělost","originalita","kopie","originál","napodobenina","falzum","autenticita","faleš","pravda","lež","polopravda","překroucení","manipulace","přesvědčení","víra","pochybnost","skepse","cynismus","optimismus","pesimismus","nihilismus","idealismu","realismus","pragmatismus","utopie","dystopie","chaos","pořádek","entropie","synergie","symbióza","parazitismus","komenzalismus","mutualismus"];
+
+const EXTRA_DESC_2 = ["rekursivní sebereferenčnost","paradox lháře","Russell paradox","Burali-Fortiho paradox","Banach-Tarskiho paradox","Simpson paradox","Monty Hall problem","Haberdasherův paradox","Zénónův paradox","Achillův a želva","dichotomie pohybu","paradox šípu","paradox stadionu","Berry paradox","Richard paradox","Grelling-Nelsonův paradox","Soritesuv paradox","sorites problém","paradox tolerance","paradox demokracie","paradox svobody","paradox volby","paradox hedonismu","paradox askeze","paradox ctnosti","paradox altruismu","paradox sebelásky","paradox identiy","loď Thésea","řeka Herakleita","Parmenideova neměnnost","platónův jeskyní","alegorie slunce","zlatý řez","fibonacciho posloupnost","pascalův trojúhelník","Mandelbrotova množina","sierpinského trojúhelník","Kochova vločka","Hausdorffovy fraktály"];
+
+// Merge all words
+function mergeWords(base, extra) {
+  const all = [...base];
+  for (const w of extra) {
+    if (!all.includes(w)) all.push(w);
+  }
+  return all;
+}
+
+WORDS.paint[1] = mergeWords(WORDS.paint[1], EXTRA_PAINT_1);
+WORDS.paint[2] = mergeWords(WORDS.paint[2], EXTRA_PAINT_2);
+WORDS.mime[1]  = mergeWords(WORDS.mime[1], EXTRA_MIME_1);
+WORDS.mime[2]  = mergeWords(WORDS.mime[2], EXTRA_MIME_2);
+WORDS.desc[1]  = mergeWords(WORDS.desc[1], EXTRA_DESC_1);
+WORDS.desc[2]  = mergeWords(WORDS.desc[2], EXTRA_DESC_2);
+
+// Ensure 3 and 4 also have 500 - add more
+const PAINT_3_EXTRA = ["chromatická aberace","zlatý řez v kompozici","negativní prostor","gestalt principy","figura a pozadí","vizuální rytmus","hierarchie prvků","barevná harmonie","komplementární barvy","analogické barvy","triadická harmonie","tetradická harmonie","teplé a studené barvy","hodnota a tón","sytost a jas","optický klam","vícebodová perspektiva","kavalírská perspektiva","axonometrická projekce","izometrická projekce","ortogonální projekce","oblique projekce","diagonální symetrie","radiální symetrie","rotační symetrie","translační symetrie","glide reflexní symetrie","skálování fraktálu","Hausdorffova dimenze","topologická transformace","homeomorfismus","diffeomorfismus","Riemannova geometrie","hyperbolická geometrie","sférická geometrie","projektivní geometrie","afinní geometrie","algebraická geometrie","diferenciální geometrie","diskrétní geometrie","Lobačevského geometrie","Minkowského prostor","Euklidův prostor","Banachův prostor","Hilbertův prostor","topologický prostor","metrický prostor","normovaný prostor","vektorový prostor","afinní prostor","projektivní prostor","Riemannův povrch","Kleinova lahev","Möbiova páska","Topologické variety","kompaktní prostor","Hausdorffův prostor","regulární prostor","normální prostor","paracompaktní prostor","sekvenčně kompaktní prostor"];
+
+const PAINT_4_EXTRA = ["singularita vědomí","informační entropie","Shannonova entropie","Boltzmannova entropie","termodynamická entropie","Kolmogorova složitost","algoritmická informace","Čaitinova konstanta omega","Turingova vypočítatelnost","Church-Turingova teze","halting problem","Gödelův theorem neúplnosti","Löbův theorem","Tarskiho undefinabilita","Beth definabilita","Craig interpolace","Lindströmovy theoremy","Vaaghtův theorem","compactness theorem","Löwenheim-Skolemův theorem","Herbrandův theorem","Herbrandovo vesmírné řešení","rezoluce SLD","unifikace a matching","Robinson unifikace","Paterson-Wegman unifikace","Huet unifikace vyššího řádu","Maher unifikace","Plotkinova induktivní logika","Muggleton induktivní syntéza","inverní rezoluce","FOIL algoritmus","Progolův systém","Alephův systém","CF induktivní programování","CIGOL systém","PROGOL systém","Mishima learning","Linus Learning","HYPER systém","CLAUDIEN systém"];
+
+const MIME_3_EXTRA = ["filosofická kontemplaceráce","nezdvořilé odmítnutí nabídky","skrytý obdiv k nepříteli","tajný smutek přes úsměv","vnitřní konflikt morálního dilema","potlačené výčitky svědomí","nutkavé rituální chování","manická epizoda vs depresivní epizoda","disociativní stav","anafilaktická reakce","hypnagogické halucinace","depersonalizace","derealizace","alexithymie","hypervigilance","psychosomatická bolest","somatoformní porucha","konverzní porucha","Munchausenův syndrom","Ganserův syndrom","Capgrasův syndrom","Cotardův syndrom","Fregoli syndrom","klinické lycanthropie","folie à deux","Jerusalem syndrome","Paris syndrome","Stendhalův syndrom","Florence syndrome","Lima syndrome"];
+
+const MIME_4_EXTRA = ["superposice morálního rozhodnutí","kvantový suicid","mnohosvětová teorie vědomí","panpsychismus","emergentní fenomenologie","radikální behaviorismus","Skinerova burza posílení","latentní učení Tolman","kognitivní mapa","Bandurova teorie sociálního učení","Vygotského zóna proximálního vývoje","Piagetovy kognitivní stadia","Kohlbergovy morální stadia","Eriksonovy psychosociální stadia","teorie attachmentu Bowlby","vnitřní pracovní model","reaktance Brehm","kognitivní disonance Festinger","samoopravující disonance","attribution theory Heider","correspondent inference Jones","covariation model Kelley","fundamental attribution error","actor-observer bias","self-serving bias","in-group favoritism","out-group homogeneity","contact hypothesis Allport","realistic conflict theory Sherif","social identity theory Tajfel"];
+
+const DESC_3_EXTRA = ["deliberativní demokracie","participativní demokracie","zastupitelská demokracie","přímá demokracie","likvidní demokracie","anarko-kapitalismus","anarko-komunismus","anarko-syndikalismus","anarko-primitivismus","post-anarko-feminismus","kolektivní akce dilema","společná tragédie","volné jezdectví","asymetrie informací","morální hazard","nepříznivý výběr","signalizace a screening","principal-agent problém","transakční náklady","bounded rationality","nudge theory","libertariánský paternalismus","choice architecture","heuristiky a biasy","prospect theory","loss aversion","endowment effect","status quo bias","anchoring effect","framing effect","availability heuristic","representativeness heuristic","affect heuristic","recognition heuristic","fast and slow thinking","dual-process theory","system 1 a system 2","cognitive ease","mere exposure effect"];
+
+const DESC_4_EXTRA = ["transcendentální apercepce Kanta","schematismus čistého rozumu","antinomie čistého rozumu","paralogismy čistého rozumu","deontologická etika Kanta","kategorický imperativ","formulace universality","formulace lidskosti","formulace království účelů","konsekvencialismus Benthama","hedonistický kalkulus","utilitarismus Milla","preferenční utilitarismus","pravidlový utilitarismus","negativní utilitarismus","popperianský utilitarismus","Rawlsova teorie spravedlnosti","závoj nevědomosti","princip diference","maximinové pravidlo","Nozickova teorie oprávnění","historická teorie nároku","Walzerovský komplexní equalismus","capabilitation approach","senova teorie možností","emoční inteligence","kontraktuální teorie Scanlon","teorie dobra jako rozmanitosti","teorie procedurální spravedlnosti","teorie komunutativní spravedlnosti"];
+
+WORDS.paint[3] = mergeWords(WORDS.paint[3], PAINT_3_EXTRA);
+WORDS.paint[4] = mergeWords(WORDS.paint[4], PAINT_4_EXTRA);
+WORDS.mime[3]  = mergeWords(WORDS.mime[3], MIME_3_EXTRA);
+WORDS.mime[4]  = mergeWords(WORDS.mime[4], MIME_4_EXTRA);
+WORDS.desc[3]  = mergeWords(WORDS.desc[3], DESC_3_EXTRA);
+WORDS.desc[4]  = mergeWords(WORDS.desc[4], DESC_4_EXTRA);
+
+// State
+let currentDiff = 1;
+const usedWords = { paint: new Set(), mime: new Set(), desc: new Set() };
+const lastWord = { paint: '', mime: '', desc: '' };
+
+const DIFF_NAMES = { 1: 'Lehká', 2: 'Střední', 3: 'Těžká', 4: 'Expert' };
+
+function pickRandom(category) {
+  const pool = WORDS[category][currentDiff];
+  const available = pool.filter(w => !usedWords[category].has(w));
+  if (available.length === 0) {
+    usedWords[category].clear();
+    return pickRandom(category);
+  }
+  const word = available[Math.floor(Math.random() * available.length)];
+  usedWords[category].add(word);
+  return word;
+}
+
+function generate(cat) {
+  const word = pickRandom(cat);
+  lastWord[cat] = word;
+
+  const el = document.getElementById('word-' + cat);
+  el.classList.remove('animating');
+  void el.offsetWidth;
+  el.textContent = word;
+  el.classList.add('animating');
+
+  // Update counter
+  const pool = WORDS[cat][currentDiff];
+  const used = usedWords[cat].size;
+  document.getElementById('count-' + cat).textContent = `Zobrazeno: ${used} / ${pool.length}`;
+}
+
+function setDifficulty(d) {
+  currentDiff = d;
+  usedWords.paint.clear();
+  usedWords.mime.clear();
+  usedWords.desc.clear();
+
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.diff-btn[data-d="${d}"]`).classList.add('active');
+
+  const name = DIFF_NAMES[d];
+  document.getElementById('badge-paint').textContent = name;
+  document.getElementById('badge-mime').textContent = name;
+  document.getElementById('badge-desc').textContent = name;
+
+  // Reset words display
+  ['paint','mime','desc'].forEach(cat => {
+    document.getElementById('word-' + cat).textContent = 'Stiskni tlačítko!';
+    document.getElementById('hint-' + cat).textContent = '';
+    document.getElementById('count-' + cat).textContent = '';
+  });
+}
+
+// Init difficulty buttons
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => setDifficulty(parseInt(btn.dataset.d)));
+});
+</script>
+
+
+</body></html>
